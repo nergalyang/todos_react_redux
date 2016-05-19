@@ -62,6 +62,8 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -146,7 +148,7 @@
 	// 	id:0,
 	// 	text:'Learn redux'
 	// })
-	// console.log(store.getState());
+	console.log(store.getState());
 
 	var nextTodoId = 0;
 
@@ -162,41 +164,164 @@
 		_createClass(TodoApp, [{
 			key: 'render',
 			value: function render() {
-				return React.createElement(
+				var _props = this.props;
+				var todos = _props.todos;
+				var visibilityFilter = _props.visibilityFilter;
+
+				var visibleTodos = getVisibleTodos(todos, visibilityFilter);
+				return _react2.default.createElement(
 					'div',
 					null,
-					React.createElement(
-						'ul',
+					_react2.default.createElement(AddTodo, { onAddClick: function onAddClick(text) {
+							return store.dispatch({
+								type: 'ADD_TODO',
+								id: nextTodoId++,
+								text: text
+							});
+						} }),
+					_react2.default.createElement(TodoList, {
+						todos: visibleTodos,
+						onTodoClick: function onTodoClick(id) {
+							store.dispatch({
+								type: 'TOGGLE_TODO',
+								id: id
+							});
+						}
+					}),
+					_react2.default.createElement(
+						'p',
 						null,
-						store.getState().todos.map(function (e) {
-							React.createElement(
-								'li',
-								{ key: e.id },
-								e.text
-							);
-						})
-					),
-					React.createElement(
-						'button',
-						{ onClick: function onClick() {
-								store.dispatch({
-									type: 'ADD_TODO',
-									text: 'Learn redux',
-									id: nextTodoId++
-								});
-							} },
-						'Add Todo'
+						' ',
+						_react2.default.createElement(
+							FilterLink,
+							{ filter: 'SHOW_ALL', currentFilter: visibilityFilter, className: 'showAll' },
+							'Show all'
+						),
+						' ',
+						_react2.default.createElement(
+							FilterLink,
+							{ filter: 'SHOW_COMPLETED', currentFilter: visibilityFilter, className: 'showCompleted' },
+							'Show completed'
+						),
+						' ',
+						_react2.default.createElement(
+							FilterLink,
+							{ filter: 'SHOW_ACTIVE', currentFilter: visibilityFilter, className: 'showActive' },
+							'Show active'
+						)
 					)
 				);
 			}
 		}]);
 
 		return TodoApp;
-	}(_react2.default);
+	}(_react.Component);
+	//var { checked, className, ...other } = this.props;
+	//try className above
+
+
+	var FilterLink = function FilterLink(_ref) {
+		var filter = _ref.filter;
+		var children = _ref.children;
+		var currentFilter = _ref.currentFilter;
+
+		var something = _objectWithoutProperties(_ref, ['filter', 'children', 'currentFilter']);
+
+		if (filter === currentFilter) {
+			return _react2.default.createElement(
+				'span',
+				null,
+				children
+			);
+		}
+		return _react2.default.createElement(
+			'a',
+			{ href: '#',
+				onClick: function onClick(e) {
+					console.log("logging className! " + something.className + " This is destruction");
+					e.preventDefault();
+					store.dispatch({
+						type: 'SET_VISIBILITY_FILTER',
+						filter: filter
+					});
+				} },
+			children
+		);
+	};
+
+	var Todo = function Todo(_ref2) {
+		var completed = _ref2.completed;
+		var onTodoClick = _ref2.onTodoClick;
+		var text = _ref2.text;
+		return _react2.default.createElement(
+			'li',
+			{
+				style: {
+					textDecoration: completed ? 'line-through' : 'none'
+				},
+				onClick: onTodoClick },
+			text
+		);
+	};
+
+	var TodoList = function TodoList(_ref3) {
+		var todos = _ref3.todos;
+		var _onTodoClick = _ref3.onTodoClick;
+		return _react2.default.createElement(
+			'ul',
+			null,
+			todos.map(function (todo) {
+				return _react2.default.createElement(Todo, _extends({
+					key: todo.id
+				}, todo, {
+					onTodoClick: function onTodoClick() {
+						return _onTodoClick(todo.id);
+					}
+				}));
+			})
+		);
+	};
+
+	var AddTodo = function AddTodo(_ref4) {
+		var onAddClick = _ref4.onAddClick;
+
+		var input = void 0;
+		return;
+		_react2.default.createElement(
+			'div',
+			null,
+			_react2.default.createElement('input', { ref: function ref(node) {
+					return input = node;
+				} }),
+			_react2.default.createElement(
+				'button',
+				{ onClick: function onClick() {
+						return onAddClick(input.value);
+					}
+				},
+				'Add Todo'
+			)
+		);
+	};
+
+	var getVisibleTodos = function getVisibleTodos(todos, filter) {
+		switch (filter) {
+			case 'SHOW_ALL':
+				return todos;
+			case 'SHOW_COMPLETED':
+				return todos.filter(function (todo) {
+					return todo.completed;
+				});
+			case 'SHOW_ACTIVE':
+				return todos.filter(function (todo) {
+					return !todo.completed;
+				});
+		}
+	};
 
 	var node = document.getElementById('root');
 	var render = function render() {
-		_reactDom2.default.render(React.createElement(TodoApp, null), node);
+		_reactDom2.default.render(_react2.default.createElement(TodoApp, store.getState()), node);
 	};
 	store.subscribe(render);
 	render();
